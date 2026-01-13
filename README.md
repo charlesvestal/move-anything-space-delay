@@ -32,6 +32,12 @@ Input ---+-------------------------------- Dry ----+
 
 The module installs to `/data/UserData/move-anything/modules/chain/audio_fx/spacecho/`
 
+## Credits
+
+Based on [TapeDelay](https://github.com/cyrusasfa/TapeDelay) by Cyrus Afsary.
+
+Inspired by the [Roland RE-201 Space Echo](https://www.roland.com/global/promos/space_echo_history/) tape delay unit (1974).
+
 ## License
 
 MIT License - Copyright (c) 2025 Charles Vestal
