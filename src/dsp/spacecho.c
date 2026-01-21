@@ -371,6 +371,44 @@ static int v2_get_param(void *instance, const char *key, char *buf, int buf_len)
     else if (strcmp(key, "name") == 0) {
         return snprintf(buf, buf_len, "Space Echo");
     }
+
+    /* UI hierarchy for shadow parameter editor */
+    if (strcmp(key, "ui_hierarchy") == 0) {
+        const char *hierarchy = "{"
+            "\"modes\":null,"
+            "\"levels\":{"
+                "\"root\":{"
+                    "\"children\":null,"
+                    "\"knobs\":[\"time\",\"feedback\",\"mix\",\"tone\",\"saturation\"],"
+                    "\"params\":[\"time\",\"feedback\",\"mix\",\"tone\",\"saturation\"]"
+                "}"
+            "}"
+        "}";
+        int len = strlen(hierarchy);
+        if (len < buf_len) {
+            strcpy(buf, hierarchy);
+            return len;
+        }
+        return -1;
+    }
+
+    /* Chain params metadata for shadow parameter editor */
+    if (strcmp(key, "chain_params") == 0) {
+        const char *params_json = "["
+            "{\"key\":\"time\",\"name\":\"Time\",\"type\":\"float\",\"min\":0,\"max\":1},"
+            "{\"key\":\"feedback\",\"name\":\"Feedback\",\"type\":\"float\",\"min\":0,\"max\":1},"
+            "{\"key\":\"mix\",\"name\":\"Mix\",\"type\":\"float\",\"min\":0,\"max\":1},"
+            "{\"key\":\"tone\",\"name\":\"Tone\",\"type\":\"float\",\"min\":0,\"max\":1},"
+            "{\"key\":\"saturation\",\"name\":\"Saturation\",\"type\":\"float\",\"min\":0,\"max\":1}"
+        "]";
+        int len = strlen(params_json);
+        if (len < buf_len) {
+            strcpy(buf, params_json);
+            return len;
+        }
+        return -1;
+    }
+
     return -1;
 }
 
