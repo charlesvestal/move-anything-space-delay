@@ -5,6 +5,7 @@
   "version": "0.3.1",
   "description": "RE-201 style tape delay",
   "author": "Charles Vestal",
+  "license": "MIT",
   "dsp": "spacecho.so",
   "api_version": 2,
   "capabilities": {
