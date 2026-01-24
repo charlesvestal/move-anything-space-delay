@@ -3,3 +3,5 @@ dist/
 *.so
 .DS_Store
 *.tar.gz
+
+.worktrees
