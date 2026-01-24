@@ -142,18 +142,6 @@ static float OnePoleFilter_Process(OnePoleFilter *f, float input) {
 }
 
 /* ============================================================================
- * SOFT SATURATION - Gentle tape-style saturation
- * ============================================================================ */
-
-static float SoftSaturate(float x, float amount) {
-    if (amount <= 0.0f) return x;
-
-    /* Soft clipping using tanh */
-    float drive = 1.0f + amount * 3.0f;
-    return tanhf(x * drive) / drive;
-}
-
-/* ============================================================================
  * SHARED STATE
  * ============================================================================ */
 
@@ -214,14 +202,12 @@ typedef struct {
     SmoothedValue smoothedFeedback;
     SmoothedValue smoothedMix;
     SmoothedValue smoothedTone;
-    SmoothedValue smoothedSaturation;
 
     /* Parameters */
     float param_time;
     float param_feedback;
     float param_mix;
     float param_tone;
-    float param_saturation;
 
     int initialized;
 } spacecho_instance_t;
@@ -245,7 +231,6 @@ static void* v2_create_instance(const char *module_dir, const char *config_json)
     inst->param_feedback = 0.4f;
     inst->param_mix = 0.5f;
     inst->param_tone = 0.5f;
-    inst->param_saturation = 0.0f;
 
     /* Initialize delay lines */
     for (int ch = 0; ch < MAX_CHANNELS; ch++) {
@@ -259,7 +244,6 @@ static void* v2_create_instance(const char *module_dir, const char *config_json)
     SmoothedValue_Init(&inst->smoothedFeedback, GetFeedback(inst->param_feedback));
     SmoothedValue_Init(&inst->smoothedMix, inst->param_mix);
     SmoothedValue_Init(&inst->smoothedTone, inst->param_tone);
-    SmoothedValue_Init(&inst->smoothedSaturation, inst->param_saturation);
 
     inst->initialized = 1;
     plugin_log("Instance created");
@@ -290,7 +274,6 @@ static void v2_process_block(void *instance, int16_t *audio_inout, int frames) {
         float delayTime = SmoothedValue_GetNext(&inst->smoothedDelayTime);
         float feedback = SmoothedValue_GetNext(&inst->smoothedFeedback);
         float mix = SmoothedValue_GetNext(&inst->smoothedMix);
-        float saturation = SmoothedValue_GetNext(&inst->smoothedSaturation);
 
         for (int ch = 0; ch < 2; ch++) {
             /* Convert input to float */
@@ -302,10 +285,8 @@ static void v2_process_block(void *instance, int16_t *audio_inout, int frames) {
             /* Apply tone filter to delayed signal */
             delayed = OnePoleFilter_Process(&inst->toneFilter[ch], delayed);
 
-            /* Tape-style saturation on the record path (input + feedback) */
-            float write = in + delayed * feedback;
-            float saturated = SoftSaturate(write, saturation);
-            DelayLine_Write(&inst->delayLine[ch], saturated);
+            /* Write input + feedback to delay line */
+            DelayLine_Write(&inst->delayLine[ch], in + delayed * feedback);
 
             /* Mix dry/wet */
             float out = in * (1.0f - mix) + delayed * mix;
@@ -346,10 +327,6 @@ static void v2_set_param(void *instance, const char *key, const char *val) {
             OnePoleFilter_SetCutoff(&inst->toneFilter[ch], GetToneFrequency(v), SAMPLE_RATE);
         }
     }
-    else if (strcmp(key, "saturation") == 0) {
-        inst->param_saturation = v;
-        SmoothedValue_SetTarget(&inst->smoothedSaturation, v, RAMP_SAMPLES);
-    }
 }
 
 static int v2_get_param(void *instance, const char *key, char *buf, int buf_len) {
@@ -368,9 +345,6 @@ static int v2_get_param(void *instance, const char *key, char *buf, int buf_len)
     else if (strcmp(key, "tone") == 0) {
         return snprintf(buf, buf_len, "%.2f", inst->param_tone);
     }
-    else if (strcmp(key, "saturation") == 0) {
-        return snprintf(buf, buf_len, "%.2f", inst->param_saturation);
-    }
     else if (strcmp(key, "name") == 0) {
         return snprintf(buf, buf_len, "TapeDelay");
     }
@@ -382,8 +356,8 @@ static int v2_get_param(void *instance, const char *key, char *buf, int buf_len)
             "\"levels\":{"
                 "\"root\":{"
                     "\"children\":null,"
-                    "\"knobs\":[\"time\",\"feedback\",\"mix\",\"tone\",\"saturation\"],"
-                    "\"params\":[\"time\",\"feedback\",\"mix\",\"tone\",\"saturation\"]"
+                    "\"knobs\":[\"time\",\"feedback\",\"mix\",\"tone\"],"
+                    "\"params\":[\"time\",\"feedback\",\"mix\",\"tone\"]"
                 "}"
             "}"
         "}";
@@ -401,8 +375,7 @@ static int v2_get_param(void *instance, const char *key, char *buf, int buf_len)
             "{\"key\":\"time\",\"name\":\"Time\",\"type\":\"float\",\"min\":0,\"max\":1},"
             "{\"key\":\"feedback\",\"name\":\"Feedback\",\"type\":\"float\",\"min\":0,\"max\":1},"
             "{\"key\":\"mix\",\"name\":\"Mix\",\"type\":\"float\",\"min\":0,\"max\":1},"
-            "{\"key\":\"tone\",\"name\":\"Tone\",\"type\":\"float\",\"min\":0,\"max\":1},"
-            "{\"key\":\"saturation\",\"name\":\"Saturation\",\"type\":\"float\",\"min\":0,\"max\":1}"
+            "{\"key\":\"tone\",\"name\":\"Tone\",\"type\":\"float\",\"min\":0,\"max\":1}"
         "]";
         int len = strlen(params_json);
         if (len < buf_len) {
