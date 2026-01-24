@@ -27,7 +27,6 @@ Tape delay audio effect module for Move Anything.
 - **Feedback**: Echo repeats (0-95%)
 - **Mix**: Dry/wet blend
 - **Tone**: Lowpass filter on repeats (500Hz to 12kHz)
-- **Saturation**: Soft tape-style saturation on feedback
 
 ## Building
 
@@ -42,9 +41,9 @@ Tape delay audio effect module for Move Anything.
 Input ---+-------------------------------- Dry ----+
          |                                         |
          +---> Delay Line ---> Tone Filter --> Wet-+---> Mix ---> Output
-                   ^               |               |
-                   |               v               |
-                   +--- Saturation <-- Feedback <--+
+                   ^                               |
+                   |                               |
+                   +----------- Feedback <---------+
 ```
 
 ## Module ID
