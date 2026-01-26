@@ -301,9 +301,46 @@ static void v2_process_block(void *instance, int16_t *audio_inout, int frames) {
     }
 }
 
+
+/* Helper to extract a JSON number value by key */
+static int json_get_number(const char *json, const char *key, float *out) {
+    char search[64];
+    snprintf(search, sizeof(search), "\"%s\":", key);
+    const char *pos = strstr(json, search);
+    if (!pos) return -1;
+    pos += strlen(search);
+    while (*pos == ' ') pos++;
+    *out = (float)atof(pos);
+    return 0;
+}
+
 static void v2_set_param(void *instance, const char *key, const char *val) {
     spacecho_instance_t *inst = (spacecho_instance_t*)instance;
     if (!inst) return;
+
+    /* State restore from patch save */
+    if (strcmp(key, "state") == 0) {
+        float v;
+        if (json_get_number(val, "time", &v) == 0) {
+            inst->param_time = v;
+            SmoothedValue_SetTarget(&inst->smoothedDelayTime, GetDelayTimeSeconds(v), RAMP_SAMPLES);
+        }
+        if (json_get_number(val, "feedback", &v) == 0) {
+            inst->param_feedback = v;
+            SmoothedValue_SetTarget(&inst->smoothedFeedback, GetFeedback(v), RAMP_SAMPLES);
+        }
+        if (json_get_number(val, "mix", &v) == 0) {
+            inst->param_mix = v;
+            SmoothedValue_SetTarget(&inst->smoothedMix, v, RAMP_SAMPLES);
+        }
+        if (json_get_number(val, "tone", &v) == 0) {
+            inst->param_tone = v;
+            for (int ch = 0; ch < MAX_CHANNELS; ch++) {
+                OnePoleFilter_SetCutoff(&inst->toneFilter[ch], GetToneFrequency(v), SAMPLE_RATE);
+            }
+        }
+        return;
+    }
 
     float v = atof(val);
     if (v < 0.0f) v = 0.0f;
@@ -347,6 +384,11 @@ static int v2_get_param(void *instance, const char *key, char *buf, int buf_len)
     }
     else if (strcmp(key, "name") == 0) {
         return snprintf(buf, buf_len, "TapeDelay");
+    }
+    else if (strcmp(key, "state") == 0) {
+        return snprintf(buf, buf_len,
+            "{\"time\":%.4f,\"feedback\":%.4f,\"mix\":%.4f,\"tone\":%.4f}",
+            inst->param_time, inst->param_feedback, inst->param_mix, inst->param_tone);
     }
 
     /* UI hierarchy for shadow parameter editor */
