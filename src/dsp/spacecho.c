@@ -158,10 +158,12 @@ static void plugin_log(const char *msg) {
     }
 }
 
-/* Convert normalized parameters to actual values */
-static float GetDelayTimeSeconds(float normalized) {
-    /* 0-1 maps to 0.02-2.0 seconds (exponential for better feel) */
-    return 0.02f + normalized * normalized * 1.98f;
+/* Convert milliseconds to seconds */
+static float GetDelayTimeSeconds(int ms) {
+    /* Clamp to valid range */
+    if (ms < 20) ms = 20;
+    if (ms > 2000) ms = 2000;
+    return (float)ms / 1000.0f;
 }
 
 static float GetFeedback(float normalized) {
@@ -204,7 +206,7 @@ typedef struct {
     SmoothedValue smoothedTone;
 
     /* Parameters */
-    float param_time;
+    int param_time;        /* milliseconds (20-2000) */
     float param_feedback;
     float param_mix;
     float param_tone;
@@ -227,7 +229,7 @@ static void* v2_create_instance(const char *module_dir, const char *config_json)
     }
 
     /* Set default parameters */
-    inst->param_time = 0.3f;
+    inst->param_time = 400;  /* 400ms */
     inst->param_feedback = 0.4f;
     inst->param_mix = 0.5f;
     inst->param_tone = 0.5f;
@@ -322,8 +324,11 @@ static void v2_set_param(void *instance, const char *key, const char *val) {
     if (strcmp(key, "state") == 0) {
         float v;
         if (json_get_number(val, "time", &v) == 0) {
-            inst->param_time = v;
-            SmoothedValue_SetTarget(&inst->smoothedDelayTime, GetDelayTimeSeconds(v), RAMP_SAMPLES);
+            int ms = (int)v;
+            if (ms < 20) ms = 20;
+            if (ms > 2000) ms = 2000;
+            inst->param_time = ms;
+            SmoothedValue_SetTarget(&inst->smoothedDelayTime, GetDelayTimeSeconds(ms), RAMP_SAMPLES);
         }
         if (json_get_number(val, "feedback", &v) == 0) {
             inst->param_feedback = v;
@@ -342,13 +347,21 @@ static void v2_set_param(void *instance, const char *key, const char *val) {
         return;
     }
 
+    if (strcmp(key, "time") == 0) {
+        int ms = atoi(val);
+        if (ms < 20) ms = 20;
+        if (ms > 2000) ms = 2000;
+        inst->param_time = ms;
+        SmoothedValue_SetTarget(&inst->smoothedDelayTime, GetDelayTimeSeconds(ms), RAMP_SAMPLES);
+        return;
+    }
+
     float v = atof(val);
     if (v < 0.0f) v = 0.0f;
     if (v > 1.0f) v = 1.0f;
 
-    if (strcmp(key, "time") == 0) {
-        inst->param_time = v;
-        SmoothedValue_SetTarget(&inst->smoothedDelayTime, GetDelayTimeSeconds(v), RAMP_SAMPLES);
+    if (0) {
+        /* placeholder - time handled above */
     }
     else if (strcmp(key, "feedback") == 0) {
         inst->param_feedback = v;
@@ -371,7 +384,7 @@ static int v2_get_param(void *instance, const char *key, char *buf, int buf_len)
     if (!inst) return -1;
 
     if (strcmp(key, "time") == 0) {
-        return snprintf(buf, buf_len, "%.2f", inst->param_time);
+        return snprintf(buf, buf_len, "%d", inst->param_time);
     }
     else if (strcmp(key, "feedback") == 0) {
         return snprintf(buf, buf_len, "%.2f", inst->param_feedback);
@@ -387,7 +400,7 @@ static int v2_get_param(void *instance, const char *key, char *buf, int buf_len)
     }
     else if (strcmp(key, "state") == 0) {
         return snprintf(buf, buf_len,
-            "{\"time\":%.4f,\"feedback\":%.4f,\"mix\":%.4f,\"tone\":%.4f}",
+            "{\"time\":%d,\"feedback\":%.4f,\"mix\":%.4f,\"tone\":%.4f}",
             inst->param_time, inst->param_feedback, inst->param_mix, inst->param_tone);
     }
 
@@ -414,10 +427,10 @@ static int v2_get_param(void *instance, const char *key, char *buf, int buf_len)
     /* Chain params metadata for shadow parameter editor */
     if (strcmp(key, "chain_params") == 0) {
         const char *params_json = "["
-            "{\"key\":\"time\",\"name\":\"Time\",\"type\":\"float\",\"min\":0,\"max\":1},"
-            "{\"key\":\"feedback\",\"name\":\"Feedback\",\"type\":\"float\",\"min\":0,\"max\":1},"
-            "{\"key\":\"mix\",\"name\":\"Mix\",\"type\":\"float\",\"min\":0,\"max\":1},"
-            "{\"key\":\"tone\",\"name\":\"Tone\",\"type\":\"float\",\"min\":0,\"max\":1}"
+            "{\"key\":\"time\",\"name\":\"Time\",\"type\":\"int\",\"min\":20,\"max\":2000,\"step\":10},"
+            "{\"key\":\"feedback\",\"name\":\"Feedback\",\"type\":\"float\",\"min\":0,\"max\":1,\"step\":0.01},"
+            "{\"key\":\"mix\",\"name\":\"Mix\",\"type\":\"float\",\"min\":0,\"max\":1,\"step\":0.01},"
+            "{\"key\":\"tone\",\"name\":\"Tone\",\"type\":\"float\",\"min\":0,\"max\":1,\"step\":0.01}"
         "]";
         int len = strlen(params_json);
         if (len < buf_len) {

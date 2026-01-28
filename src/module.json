@@ -2,7 +2,7 @@
   "id": "tapedelay",
   "name": "TapeDelay",
   "abbrev": "TD",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "description": "Tape delay with flutter and tone shaping",
   "author": "cyrusasfa (port: charlesvestal)",
   "license": "MIT",
@@ -24,11 +24,11 @@
       {
         "key": "time",
         "name": "Time",
-        "type": "float",
-        "min": 0.0,
-        "max": 1.0,
-        "default": 0.4,
-        "step": 0.05
+        "type": "int",
+        "min": 20,
+        "max": 2000,
+        "default": 400,
+        "step": 10
       },
       {
         "key": "feedback",
@@ -37,7 +37,7 @@
         "min": 0.0,
         "max": 1.0,
         "default": 0.4,
-        "step": 0.05
+        "step": 0.01
       },
       {
         "key": "mix",
@@ -46,7 +46,7 @@
         "min": 0.0,
         "max": 1.0,
         "default": 0.35,
-        "step": 0.05
+        "step": 0.01
       },
       {
         "key": "tone",
@@ -55,7 +55,7 @@
         "min": 0.0,
         "max": 1.0,
         "default": 0.6,
-        "step": 0.05
+        "step": 0.01
       }
     ]
   }
