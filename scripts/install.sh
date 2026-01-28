@@ -20,7 +20,7 @@ ssh ableton@move.local "mkdir -p /data/UserData/move-anything/modules/audio_fx/t
 scp -r dist/tapedelay/* ableton@move.local:/data/UserData/move-anything/modules/audio_fx/tapedelay/
 
 # Install chain presets if they exist
-if [ -d "src/chain_patches" ]; then
+if [ -d "src/chain_patches" ] && ls src/chain_patches/*.json >/dev/null 2>&1; then
     echo "Installing chain presets..."
     ssh ableton@move.local "mkdir -p /data/UserData/move-anything/patches"
     scp src/chain_patches/*.json ableton@move.local:/data/UserData/move-anything/patches/
