@@ -57,47 +57,14 @@
               "unit": "%"
             }
           ],
-          "knobs": ["time", "feedback", "mix", "tone"]
+          "knobs": [
+            "time",
+            "feedback",
+            "mix",
+            "tone"
+          ]
         }
       }
-    },
-    "chain_params": [
-      {
-        "key": "time",
-        "name": "Time",
-        "type": "int",
-        "min": 20,
-        "max": 2000,
-        "default": 400,
-        "step": 10
-      },
-      {
-        "key": "feedback",
-        "name": "Feedback",
-        "type": "float",
-        "min": 0.0,
-        "max": 1.0,
-        "default": 0.4,
-        "step": 0.01
-      },
-      {
-        "key": "mix",
-        "name": "Mix",
-        "type": "float",
-        "min": 0.0,
-        "max": 1.0,
-        "default": 0.35,
-        "step": 0.01
-      },
-      {
-        "key": "tone",
-        "name": "Tone",
-        "type": "float",
-        "min": 0.0,
-        "max": 1.0,
-        "default": 0.6,
-        "step": 0.01
-      }
-    ]
+    }
   }
 }
