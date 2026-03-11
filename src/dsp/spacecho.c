@@ -502,10 +502,13 @@ static int json_get_number(const char *json, const char *key, float *out) {
 /* Helper to extract a JSON string value by key */
 static int json_get_string(const char *json, const char *key, char *out, int out_len) {
     char search[64];
-    snprintf(search, sizeof(search), "\"%s\":\"", key);
+    snprintf(search, sizeof(search), "\"%s\":", key);
     const char *pos = strstr(json, search);
     if (!pos) return -1;
     pos += strlen(search);
+    while (*pos == ' ') pos++;
+    if (*pos != '"') return -1;
+    pos++;
     int i = 0;
     while (*pos && *pos != '"' && i < out_len - 1) {
         out[i++] = *pos++;
